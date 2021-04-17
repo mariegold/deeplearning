@@ -30,9 +30,9 @@ def train_model_with_aux_loss(model, train_input, train_target, train_classes, m
 def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
     nb_errors = 0
     for b in range(0, test_input.size(0), mini_batch_size):
-        output = model(test_input.narrow(0, b, mini_batch_size))
+        output = model(train_input.narrow(0, b, mini_batch_size))
         _, predicted_classes = output.max(1)
-        for k in range(mini_batch_size):
+        for k in range(mini_batch_size):s
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors = nb_errors + 1
     return nb_errors
@@ -40,8 +40,8 @@ def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
 def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 50):
     nb_errors = 0
     for b in range(0, test_input.size(0), mini_batch_size):
-        output_bool, output_digit1, output_digit2 = model(test_input.narrow(0, b, mini_batch_size))
-        _, predicted_classes = output_bool.max(1)
+        output_bool, output_digit1, output_digit2 = model(train_input.narrow(0, b, mini_batch_size))
+        _, predicted_classes = torch.max(output_bool, 1)
         for k in range(mini_batch_size):
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors = nb_errors + 1
