@@ -1,5 +1,4 @@
 import torch
-
 torch.set_grad_enabled(False)
 
 class Module(object):
@@ -28,8 +27,8 @@ class Linear(Module):
         return gradwrtoutput @ self.w
 
     def param(self):
-        return [self.w, self.b]
-
+        # need to implement gradient and return as pairs
+        return [self.w, , self.b]
 
 class ReLu(Module):
 
@@ -46,3 +45,8 @@ class Tanh(Module):
 
     def backward(self, output, gradwrtoutput):
         return gradwrtoutput * (1 - output**2)
+
+class LossMSE(object):
+
+    def forward(self, output, target):
+        return ((output - target)**2).mean(1)
