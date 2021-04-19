@@ -69,7 +69,7 @@ class Sequential(Module):
         return x
 
     def backward(self, *gradwrtoutput):
-        x = gradwrtoutput
+        x = gradwrtoutput[0]
 
         for layer in self.layers[::-1]:
             x = layer.backward(x)
