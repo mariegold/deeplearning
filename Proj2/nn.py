@@ -13,6 +13,7 @@ class Module(object):
     def param(self):
         return []
 
+
 class Linear(Module):
 
     def __init__(self, input_dim, output_dim):
@@ -29,7 +30,7 @@ class Linear(Module):
 
     def forward(self, input):
         self.input = input
-        return self.w @ self.input.t() + self.b
+        return self.input @ self.w.t() + self.b
 
     def backward(self, gradwrtoutput):
         self.w_grad +=  gradwrtoutput.t() @ self.input
@@ -39,10 +40,34 @@ class Linear(Module):
     def param_init(self):
         # can implement different inits
         self.w = torch.empty((self.output_dim, self.input_dim)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
-        self.b = torch.empty((self.output_dim, 1)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
+        self.b = torch.empty((self.output_dim)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
 
     def param(self):
         return [(self.w, self.grad_w), (self.b, self.grad_b)]
+
+
+class Sequential(Module):
+    def __init__(self, *layers):
+        self.layers = layers
+
+    def params(self):
+        pars = []
+        for layer in self.layers:
+            pars += layer.params
+        return pars
+
+    def forward(self, input):
+        x = input
+        for layer in self.layers:
+            x = layer.forward(x)
+        return x
+
+    def backward(self, *gradrtoutput):
+        x = gradwrtoutput
+
+        for layer in self.layers[::-1]:
+            x = layer.backward(x)
+
 
 class ReLu(Module):
     def __init__(self):
@@ -55,6 +80,7 @@ class ReLu(Module):
     def backward(self, gradwrtoutput):
         return gradwrtoutput * (self.output > 0)
 
+
 class Tanh(Module):
     def __init__(self):
         self.output = None
@@ -65,6 +91,7 @@ class Tanh(Module):
 
     def backward(self, output, gradwrtoutput):
         return gradwrtoutput * (1 - self.output**2)
+
 
 class LossMSE(Module):
     def __init__(self):
