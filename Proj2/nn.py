@@ -13,6 +13,8 @@ class Module(object):
     def param(self):
         return []
 
+    def zero_grad(self):
+        pass
 
 class Linear(Module):
 
@@ -43,7 +45,11 @@ class Linear(Module):
         self.b = torch.empty((self.output_dim)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
 
     def param(self):
-        return [(self.w, self.grad_w), (self.b, self.grad_b)]
+        return [(self.w, self.w_grad), (self.b, self.b_grad)]
+
+    def zero_grad(self):
+        self.w_grad.zero_()
+        self.b_grad.zero_()
 
 
 class Sequential(Module):
@@ -62,12 +68,15 @@ class Sequential(Module):
             x = layer.forward(x)
         return x
 
-    def backward(self, *gradrtoutput):
+    def backward(self, *gradwrtoutput):
         x = gradwrtoutput
 
         for layer in self.layers[::-1]:
             x = layer.backward(x)
 
+    def zero_grad(self):
+        for layer in self.layers:
+            layer.zero_grad()
 
 class ReLu(Module):
     def __init__(self):
@@ -100,8 +109,20 @@ class LossMSE(Module):
 
     def forward(self, output, target):
         self.output = output
-        self.target = target
+        # Convert target to one hot encoding to be able to use MSE
+        target_one_hot = torch.empty((target.shape[0], 2)) 
+        self.target = target_one_hot.scatter_(1, target.view(-1,1), 1)
         return (self.output - self.target).pow(2).mean()
 
     def backward(self):
         return 2*(self.output - self.target) / self.target.size()[0]
+
+class SGD():
+    def __init__(self, params, lr):
+        self.params = params
+        self.lr = lr
+    
+    def step(self):
+        for layer_params in self.params:
+            for (param, grad_param) in layer_params:
+                param.sub_(self.lr * grad_param)
