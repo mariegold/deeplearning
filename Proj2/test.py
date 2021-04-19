@@ -5,7 +5,7 @@ torch.set_grad_enabled(False)
 
 def generate_dataset(n):
     input = torch.empty(n, 2).uniform_(0, 1)
-    target = (((input - 0.5).pow(2).sum(1)) < (1 / (2*math.pi)**0.5)).long()
+    target = (input - 0.5).pow(2).sum(1).sub(1/(2*math.pi)).sign().add(1).div(2).long()
     return input, target
 
 if __name__ == '__main__':
@@ -20,3 +20,7 @@ if __name__ == '__main__':
     print(aff.w, aff.b)
     print(aff.backward(x))
     criterion = nn.LossMSE()
+    loss = criterion(torch.tensor([0.5]), torch.tensor([1.]))
+    print(loss)
+    print(nn.LossMSE().backward(torch.tensor([0.5]), torch.tensor([1.])))
+
