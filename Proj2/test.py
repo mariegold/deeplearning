@@ -13,14 +13,16 @@ if __name__ == '__main__':
     test_input, test_target = generate_dataset(1000)
 
     """ Testing, delete later"""
-    x = train_input[0]
+    x = train_input[0:3]
     y = train_target[0]
-    print(x, y)
+    #print(x, y)
     aff = nn.Linear(input_dim = 2, output_dim=3)
-    print(aff.w, aff.b)
-    print(aff.backward(x))
+    #print(aff.w.size(), aff.b.size())
+    #print(x.t().size())
+    aff.forward(x)
+    aff.backward(torch.tensor([[0.5, 1, 0.2],[-0.5, 0, 0.2], [-0.5, 0, 0.2]]))
+    #print(aff.backward(torch.tensor([[0.5, 1, 0.2],[-0.5, 0, 0.2]])))
     criterion = nn.LossMSE()
-    loss = criterion(torch.tensor([0.5]), torch.tensor([1.]))
-    print(loss)
-    print(nn.LossMSE().backward(torch.tensor([0.5]), torch.tensor([1.])))
-
+    loss = criterion.forward(torch.tensor([0.5]), torch.tensor([1.]))
+    #print(loss)
+    #print(criterion.backward())
