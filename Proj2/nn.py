@@ -120,12 +120,13 @@ class LossMSE(Module):
     def forward(self, output, target):
         self.output = output
         # Convert target to one hot encoding to be able to use MSE
-        target_one_hot = torch.empty((target.shape[0], 2))
+        target_one_hot = torch.empty((target.size(0), 2)).zero_()
         self.target = target_one_hot.scatter_(1, target.view(-1,1), 1)
+        #print(self.target)
         return (self.output - self.target).pow(2).mean()
 
     def backward(self):
-        return 2*(self.output - self.target) / self.target.size()[0]
+        return 2*(self.output - self.target) / self.target.size(0)
 
 class SGD():
     def __init__(self, params, lr):
