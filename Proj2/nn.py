@@ -19,6 +19,8 @@ class Module(object):
 class Linear(Module):
 
     def __init__(self, input_dim, output_dim):
+        super().__init__()
+
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.input = None
@@ -54,6 +56,8 @@ class Linear(Module):
 
 class Sequential(Module):
     def __init__(self, *layers):
+        super().__init__()
+
         self.layers = layers
 
     def params(self):
@@ -80,6 +84,8 @@ class Sequential(Module):
 
 class ReLu(Module):
     def __init__(self):
+        super().__init__()
+
         self.output = None
 
     def forward(self, input):
@@ -92,6 +98,8 @@ class ReLu(Module):
 
 class Tanh(Module):
     def __init__(self):
+        super().__init__()
+
         self.output = None
 
     def forward(self, input):
@@ -104,13 +112,15 @@ class Tanh(Module):
 
 class LossMSE(Module):
     def __init__(self):
+        super().__init__()
+
         self.output = None
         self.target = None
 
     def forward(self, output, target):
         self.output = output
         # Convert target to one hot encoding to be able to use MSE
-        target_one_hot = torch.empty((target.shape[0], 2)) 
+        target_one_hot = torch.empty((target.shape[0], 2))
         self.target = target_one_hot.scatter_(1, target.view(-1,1), 1)
         return (self.output - self.target).pow(2).mean()
 
@@ -121,7 +131,7 @@ class SGD():
     def __init__(self, params, lr):
         self.params = params
         self.lr = lr
-    
+
     def step(self):
         for layer_params in self.params:
             for (param, grad_param) in layer_params:
