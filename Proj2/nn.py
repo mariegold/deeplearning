@@ -63,7 +63,7 @@ class Sequential(Module):
     def params(self):
         pars = []
         for layer in self.layers:
-            pars += layer.params
+            pars += layer.param()
         return pars
 
     def forward(self, input):
@@ -122,7 +122,6 @@ class LossMSE(Module):
         # Convert target to one hot encoding to be able to use MSE
         target_one_hot = torch.empty((target.size(0), 2)).zero_()
         self.target = target_one_hot.scatter_(1, target.view(-1,1), 1)
-        #print(self.target)
         return (self.output - self.target).pow(2).mean()
 
     def backward(self):
