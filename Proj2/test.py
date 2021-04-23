@@ -8,7 +8,7 @@ def generate_dataset(n):
     target = (input - 0.5).pow(2).sum(1).sub(1/(2*math.pi)).sign().add(1).div(2).long()
     return input, target
 
-def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.1):
+def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
     criterion = LossMSE()
     optimizer = SGD(model.param(), lr)
     for e in range(nb_epochs):
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
 
-    train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 50)
+    train_model(model, train_input, train_target, nb_epochs = 100, mini_batch_size = 50)
 
     nb_errors = compute_nb_errors(model, test_input, test_target)
 

@@ -63,7 +63,7 @@ class Sequential(Module):
     def param(self):
         pars = []
         for layer in self.layers:
-            pars.append(layer.param())
+            pars.extend(layer.param())
         return pars
 
     def forward(self, input):
@@ -133,6 +133,5 @@ class SGD():
         self.lr = lr
 
     def step(self):
-        for layer_params in self.params:
-            for (param, grad_param) in layer_params:
-                param.sub_(self.lr * grad_param)
+        for (param, grad_param) in self.params:
+            param.sub_(self.lr * grad_param)
