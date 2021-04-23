@@ -37,7 +37,7 @@ class Linear(Module):
         return self.input @ self.w.t() + self.b
 
     def backward(self, gradwrtoutput):
-        self.w_grad +=  gradwrtoutput.t() @ self.input
+        self.w_grad += gradwrtoutput.t() @ self.input
         self.b_grad += gradwrtoutput.sum(0)
         return gradwrtoutput @ self.w
 

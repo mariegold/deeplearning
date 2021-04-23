@@ -24,10 +24,28 @@ def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epoch
             optimizer.step() # Perform the update step on parameters
         print("Epoch {}: training loss = {}" .format(e, cum_loss.item()))
 
+
+def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
+    nb_errors = 0
+    for b in range(0, test_input.size(0), mini_batch_size):
+        output = model.forward(test_input.narrow(0, b, mini_batch_size))
+        _, predicted_classes = output.max(1)
+        for k in range(mini_batch_size):
+            if test_target[b + k] != predicted_classes[k]:
+                nb_errors += 1
+    return nb_errors
+
+
 if __name__ == '__main__':
-    train_input, train_target = generate_dataset(1000)
-    test_input, test_target = generate_dataset(1000)
+    n = 1000
 
-    model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(),  Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
+    train_input, train_target = generate_dataset(n)
+    test_input, test_target = generate_dataset(n)
 
-    train_model(model, train_input, train_target, nb_epochs = 10, mini_batch_size = 50)
+    model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
+
+    train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 50)
+
+    nb_errors = compute_nb_errors(model, test_input, test_target)
+
+    print("Test accuracy {}: " .format(1 - nb_errors/n))
