@@ -42,10 +42,12 @@ if __name__ == '__main__':
     train_input, train_target = generate_dataset(n)
     test_input, test_target = generate_dataset(n)
 
-    model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
+    model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
 
-    train_model(model, train_input, train_target, nb_epochs = 100, mini_batch_size = 50)
+    train_model(model, train_input, train_target, nb_epochs = 50, mini_batch_size = 1)
 
-    nb_errors = compute_nb_errors(model, test_input, test_target)
+    nb_errors_test = compute_nb_errors(model, test_input, test_target)
+    nb_errors_train = compute_nb_errors(model, train_input, train_target)
 
-    print("Test accuracy: {} " .format(1 - nb_errors/n))
+    print("Test accuracy: {} " .format(1 - nb_errors_test/n))
+    print("Train accuracy: {} " .format(1 - nb_errors_train/n))

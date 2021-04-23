@@ -28,7 +28,7 @@ class Linear(Module):
         self.w = None
         self.b = None
         self.w_grad = torch.empty((self.output_dim, self.input_dim))
-        self.b_grad = torch.empty((self.output_dim))
+        self.b_grad = torch.empty((1, self.output_dim))
 
         self.param_init()
 
@@ -43,8 +43,8 @@ class Linear(Module):
 
     def param_init(self):
         # can implement different inits
-        self.w = torch.empty((self.output_dim, self.input_dim)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
-        self.b = torch.empty((self.output_dim)).uniform_(-1 / (self.input_dim)**2, 1 / (self.input_dim)**2)
+        self.w = torch.empty((self.output_dim, self.input_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
+        self.b = torch.empty((1, self.output_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
 
     def param(self):
         return [(self.w, self.w_grad), (self.b, self.b_grad)]
