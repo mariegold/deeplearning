@@ -60,10 +60,10 @@ class Sequential(Module):
 
         self.layers = layers
 
-    def params(self):
+    def param(self):
         pars = []
         for layer in self.layers:
-            pars += layer.param()
+            pars.append(layer.param())
         return pars
 
     def forward(self, input):

@@ -48,4 +48,4 @@ if __name__ == '__main__':
 
     nb_errors = compute_nb_errors(model, test_input, test_target)
 
-    print("Test accuracy {}: " .format(1 - nb_errors/n))
+    print("Test accuracy: {} " .format(1 - nb_errors/n))
