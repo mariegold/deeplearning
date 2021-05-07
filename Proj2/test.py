@@ -42,12 +42,24 @@ if __name__ == '__main__':
     train_input, train_target = generate_dataset(n)
     test_input, test_target = generate_dataset(n)
 
-    model = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
+    # Standardise data set
+    mean, std = train_input.mean(), train_input.std()
 
-    train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 1)
+    train_input.sub_(mean).div_(std)
+    test_input.sub_(mean).div_(std)
 
-    nb_errors_test = compute_nb_errors(model, test_input, test_target)
-    nb_errors_train = compute_nb_errors(model, train_input, train_target)
+    # Testing different activation functions
+    model_relu = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
+    model_tanh = Sequential(Linear(2,25), Tanh(), Linear(25,25), Tanh(), Linear(25,25), Tanh(), Linear(25,25), Tanh(), Linear(25, 2))
+    model_sigmoid = Sequential(Linear(2,25), Sigmoid(), Linear(25,25), Sigmoid(), Linear(25,25), Sigmoid(), Linear(25,25), Sigmoid(), Linear(25, 2))
 
-    print("Test accuracy: {} " .format(1 - nb_errors_test/n))
-    print("Train accuracy: {} " .format(1 - nb_errors_train/n))
+    models = [model_relu, model_tanh, model_sigmoid]
+    activation_names = ["ReLU", "Tanh", "Sigmoid"]
+    for (model, activation) in zip(models, activation_names):
+        train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 1)
+
+        nb_errors_test = compute_nb_errors(model, test_input, test_target)
+        nb_errors_train = compute_nb_errors(model, train_input, train_target)
+
+        print("Test accuracy with {} activation: {:.3f} " .format(activation, 1 - nb_errors_test/n))
+        print("Train accuracy with {} activation: {:.3f} \n" .format(activation, 1 - nb_errors_train/n))

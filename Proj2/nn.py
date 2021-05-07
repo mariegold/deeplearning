@@ -16,6 +16,8 @@ class Module(object):
     def zero_grad(self):
         pass
 
+
+## Modules
 class Linear(Module):
 
     def __init__(self, input_dim, output_dim):
@@ -82,6 +84,8 @@ class Sequential(Module):
         for layer in self.layers:
             layer.zero_grad()
 
+
+## Activation functions
 class ReLu(Module):
     def __init__(self):
         super().__init__()
@@ -106,10 +110,24 @@ class Tanh(Module):
         self.output = input.tanh()
         return self.output
 
-    def backward(self, output, gradwrtoutput):
+    def backward(self, gradwrtoutput):
         return gradwrtoutput * (1 - self.output**2)
 
+class Sigmoid(Module):
+    def __init__(self):
+        super().__init__()
 
+        self.output = None
+
+    def forward(self, input):
+        self.output = input.sigmoid()
+        return self.output
+
+    # Use identity o'(x) = o(x) * (1-o(x))
+    def backward(self, gradwrtoutput):
+        return gradwrtoutput * self.output * (1 - self.output)        
+
+# Loss functions
 class LossMSE(Module):
     def __init__(self):
         super().__init__()
@@ -127,6 +145,7 @@ class LossMSE(Module):
     def backward(self):
         return 2*(self.output - self.target) / self.target.size(0)
 
+# Optimizers
 class SGD():
     def __init__(self, params, lr):
         self.params = params
