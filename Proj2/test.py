@@ -26,7 +26,7 @@ def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epoch
         print("Epoch {}: training loss = {}" .format(e, cum_loss.item()))
 
 
-def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50, plot = False):
+def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50, plot = False, name = ""):
     nb_errors = 0
     predictions = []
     for b in range(0, test_input.size(0), mini_batch_size):
@@ -37,26 +37,20 @@ def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50, plot
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors += 1
     if plot:
-        plot_result(test_input, test_target, predictions)
+        plot_result(test_input, test_target, predictions, name)
     return nb_errors
 
-def plot_result(test_input, test_target, predictions):
+def plot_result(test_input, test_target, predictions, name):
     gt = plt.Circle((0.5, 0.5), (1/(2*math.pi))**0.5, color='grey', alpha = 0.5)
     plt.gca().add_patch(gt)
     plt.scatter(test_input[:,0], test_input[:,1], c = predictions)
-    plt.savefig('dataset.png')
+    plt.savefig("dataset_{}.png".format(name))
 
 if __name__ == '__main__':
     n = 1000
 
     train_input, train_target = generate_dataset(n)
     test_input, test_target = generate_dataset(n)
-
-    # Standardise data set
-    mean, std = train_input.mean(), train_input.std()
-
-    train_input.sub_(mean).div_(std)
-    test_input.sub_(mean).div_(std)
 
     # Testing different activation functions
     model_relu = Sequential(Linear(2,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25,25), ReLu(), Linear(25, 2))
@@ -68,7 +62,7 @@ if __name__ == '__main__':
     for (model, activation) in zip(models, activation_names):
         train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 1)
 
-        nb_errors_test = compute_nb_errors(model, test_input, test_target, 50, True)
+        nb_errors_test = compute_nb_errors(model, test_input, test_target, 50, True, activation)
         nb_errors_train = compute_nb_errors(model, train_input, train_target)
 
         print("Test accuracy with {} activation: {:.3f} " .format(activation, 1 - nb_errors_test/n))
