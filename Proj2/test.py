@@ -9,9 +9,12 @@ def generate_dataset(n):
     target = (input - 0.5).pow(2).sum(1).sub(1/(2*math.pi)).sign().add(1).div(2).long()
     return input, target
 
-def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
+def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001, sgd = True):
     criterion = LossMSE()
-    optimizer = SGD(model.param(), lr)
+    if sgd: 
+        optimizer = SGD(model.param(), lr)
+    else:
+        optimizer = Adam(model.param(), lr)
     for e in range(nb_epochs):
         cum_loss = 0.0
 

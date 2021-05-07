@@ -32,6 +32,11 @@ class Linear(Module):
         self.w_grad = torch.empty((self.output_dim, self.input_dim))
         self.b_grad = torch.empty((1, self.output_dim))
 
+        self.w_m = torch.empty((self.output_dim, self.input_dim))
+        self.w_v = torch.empty((self.output_dim, self.input_dim))
+        self.b_m = torch.empty((1, self.output_dim))
+        self.b_v = torch.empty((1, self.output_dim))
+
         self.param_init()
 
     def forward(self, input):
@@ -48,8 +53,13 @@ class Linear(Module):
         self.w = torch.empty((self.output_dim, self.input_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
         self.b = torch.empty((1, self.output_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
 
+        self.w_m.zero_()
+        self.w_v.zero_()
+        self.b_m.zero_()
+        self.b_v.zero_()
+
     def param(self):
-        return [(self.w, self.w_grad), (self.b, self.b_grad)]
+        return [(self.w, self.w_grad, self.w_m, self.w_v), (self.b, self.b_grad, self.b_m, self.b_v)]
 
     def zero_grad(self):
         self.w_grad.zero_()
@@ -152,5 +162,22 @@ class SGD():
         self.lr = lr
 
     def step(self):
-        for (param, grad_param) in self.params:
-            param.sub_(self.lr * grad_param)
+        for (param, param_grad, _, _) in self.params:
+            param.sub_(self.lr * param_grad)
+
+class Adam():
+    def __init__(self, params, lr, beta1 = 0.9, beta2 = 0.999, eps = 1e-8):
+        self.params = params
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.t = 0
+    def step(self):
+        self.t += 1
+        for (param, param_grad, param_m, param_v) in self.params:
+            param_m = self.beta1 * param_m + (1 - self.beta1) * param_grad
+            param_m_hat = param_m / (1 - self.beta1 ** self.t)
+            param_v = self.beta2 * param_v + (1 - self.beta2) * (param_grad ** 2)
+            param_v_hat = param_v / (1 - self.beta2 ** self.t)
+            param.sub_(self.lr * (param_m_hat / (param_v_hat.sqrt() + self.eps)))    
