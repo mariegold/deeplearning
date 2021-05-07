@@ -1,6 +1,7 @@
 from nn import *
 import math
 import torch
+import matplotlib.pyplot as plt
 torch.set_grad_enabled(False)
 
 def generate_dataset(n):
@@ -25,16 +26,25 @@ def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epoch
         print("Epoch {}: training loss = {}" .format(e, cum_loss.item()))
 
 
-def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
+def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50, plot = False):
     nb_errors = 0
+    predictions = []
     for b in range(0, test_input.size(0), mini_batch_size):
         output = model.forward(test_input.narrow(0, b, mini_batch_size))
         _, predicted_classes = output.max(1)
+        predictions.extend(predicted_classes.tolist())
         for k in range(mini_batch_size):
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors += 1
+    if plot:
+        plot_result(test_input, test_target, predictions)
     return nb_errors
 
+def plot_result(test_input, test_target, predictions):
+    gt = plt.Circle((0.5, 0.5), (1/(2*math.pi))**0.5, color='grey', alpha = 0.5)
+    plt.gca().add_patch(gt)
+    plt.scatter(test_input[:,0], test_input[:,1], c = predictions)
+    plt.savefig('dataset.png')
 
 if __name__ == '__main__':
     n = 1000
@@ -46,7 +56,7 @@ if __name__ == '__main__':
 
     train_model(model, train_input, train_target, nb_epochs = 25, mini_batch_size = 1)
 
-    nb_errors_test = compute_nb_errors(model, test_input, test_target)
+    nb_errors_test = compute_nb_errors(model, test_input, test_target, 50, True)
     nb_errors_train = compute_nb_errors(model, train_input, train_target)
 
     print("Test accuracy: {} " .format(1 - nb_errors_test/n))
