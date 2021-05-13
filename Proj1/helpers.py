@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch import optim
+from models import *
 
 def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
     criterion = nn.CrossEntropyLoss()
@@ -48,3 +49,82 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors = nb_errors + 1
     return nb_errors
+
+# Try all models with different learning rates, batch sizes, dropout rates and varying use of bn on for multiple datasets
+# Record mean and standard deviation of accuracy of each parameter setting
+def performance_estimation(datasets):
+    n = 1000
+    # Parameter grid
+    lrs = [1e-4, 1e-3, 1e-2, 1e-1,1]
+    batch_sizes = [1, 5, 10, 20, 50, 100]
+    dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
+    use_bn = [True, False]
+
+    param_combinatinos = [(lr, batch_size, bn, dropout) 
+        for lr in lrs
+        for batch_size in batch_sizes 
+        for bn in use_bn 
+        for dropout in dropout_rates]
+    # For saving mean and std across datasets for each model and parameter combination    
+    model_base_mean = {} 
+    model_base_std = {}
+    model_aux_mean = {} 
+    model_aux_std = {}
+    model_ws_mean = {} 
+    model_ws_std = {}
+    model_ws_aux_mean = {} 
+    model_ws_aux_std = {}
+
+    for param_combo in param_combinatinos:
+        model_base_mean[param_combo] = []
+        model_aux_mean[param_combo] = []
+        model_ws_mean[param_combo] = []
+        model_ws_aux_mean[param_combo] = []
+        lr, batch_size, bn, dropout = param_combo
+        # Train each model with each dataset with the given param combination, save accuracy for each dataset
+        for train_input, train_target, train_classes, test_input, test_target, test_classes in datasets:
+            model_base = BaseNet(batch_normalization=bn, dropout=dropout)
+            model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
+            model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
+            model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
+            
+            train_model(model_base, train_input, train_target, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            nb_errors_base = compute_nb_errors(model_base, test_input, test_target, mini_batch_size = 25)
+            model_base_mean[param_combo].append(1-nb_errors_base/n)
+
+            train_model_with_aux_loss(model_aux, train_input, train_target, train_classes, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            nb_errors_aux = compute_nb_errors_with_aux_loss(model_aux, test_input, test_target, mini_batch_size = 25)
+            model_aux_mean[param_combo].append(1-nb_errors_aux/n)
+
+            train_model(model_ws, train_input, train_target, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            nb_errors_ws = compute_nb_errors(model_ws, test_input, test_target, mini_batch_size = 25)
+            model_ws_mean[param_combo].append(1-nb_errors_ws/n)
+
+            train_model_with_aux_loss(model_base, train_input, train_target, train_classes, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
+            model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
+
+        
+        # Compute mean and standard deviation across the datasets for each model and param combo
+        model_base_scores = torch.FloatTensor(model_base_mean[param_combo])
+        model_base_mean[param_combo] = model_base_scores.mean().item()
+        model_base_std[param_combo] = model_base_scores.std().item()
+
+        model_aux_scores = torch.FloatTensor(model_aux_mean[param_combo])
+        model_aux_mean[param_combo] = model_aux_scores.mean().item()
+        model_aux_std[param_combo] = model_aux_scores.std().item()
+
+        model_ws_scores = torch.FloatTensor(model_ws_mean[param_combo])
+        model_ws_mean[param_combo] = model_ws_scores.mean().item()
+        model_ws_std[param_combo] = model_ws_scores.std().item()
+
+        model_ws_aux_scores = torch.FloatTensor(model_ws_aux_mean[param_combo])
+        model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
+        model_ws_aux_std[param_combo] = model_ws_aux_scores.std().item()
+
+        # Return means and stadard deviations for each model
+        return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
+
+
+
+

@@ -1,39 +1,29 @@
-import dlc_practical_prologue as prologue
-from helpers import *
-from models import *
+from dlc_practical_prologue import generate_pair_sets
+from helpers import performance_estimation
 
 if __name__ == '__main__':
-  n_pairs = 1000
-  train_input, train_target, train_classes, test_input, test_target, test_classes = prologue.generate_pair_sets(n_pairs)
+  n = 1000
+  # train_input, train_target, train_classes, test_input, test_target, test_classes = prologue.generate_pair_sets(n)
 
-  model = BaseNet(batch_normalization = True, dropout = 0.5)
-  train_model(model, train_input, train_target, mini_batch_size = 25)
-  nb_errors_test = compute_nb_errors(model, test_input, test_target, mini_batch_size = 25)
-  nb_errors_train = compute_nb_errors(model, train_input, train_target, mini_batch_size = 25)
+  # Generate 10 datasets for performance estimation
+  datasets = []
+  for i in range(10):
+    train_input, train_target, train_classes, test_input, test_target, test_classes = generate_pair_sets(n)
+    datasets.append((train_input, train_target, train_classes, test_input, test_target, test_classes))
+  
+  # Get mean and std accuracy for each model across datasets for different hyperparamer settings
+  model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std = performance_estimation(datasets)
 
-  print("Test accuracy: {} " .format(1 - nb_errors_test/n_pairs))
-  print("Train accuracy: {} " .format(1 - nb_errors_train/n_pairs))
+  # Find hyperparameter setting for each model that achieves the best mean accuracy
+  # Print the mean accuracy and the corresponding std
+  best_base_params = max(model_base_mean.items(), key = lambda k : k[1])
+  print('Best accuracy with BaseNet: {:.3f} +/- {}.'.format(model_base_mean[best_base_params], model_base_std[best_base_params])) 
 
-  model_aux = BaseNetAux(batch_normalization = True, dropout = 0.5)
-  train_model_with_aux_loss(model_aux, train_input, train_target, train_classes, mini_batch_size = 25)
-  nb_errors_test_aux = compute_nb_errors_with_aux_loss(model_aux, test_input, test_target, mini_batch_size = 25)
-  nb_errors_train_aux = compute_nb_errors_with_aux_loss(model_aux, train_input, train_target, mini_batch_size = 25)
+  best_aux_params = max(model_aux_mean.items(), key = lambda k : k[1])
+  print('Best accuracy with BaseNetAux: {:.3f} +/- {}.'.format(model_aux_mean[best_aux_params], model_aux_std[best_aux_params])) 
 
-  print("Test accuracy with aux. loss: {} " .format(1 - nb_errors_test_aux/n_pairs))
-  print("Train accuracy with aux. loss: {} " .format(1 - nb_errors_train_aux/n_pairs))
+  best_ws_params = max(model_ws_mean.items(), key = lambda k : k[1])
+  print('Best accuracy with BaseNetWeightShare: {:.3f} +/- {}.'.format(model_ws_mean[best_ws_params], model_base_std[best_ws_params])) 
 
-  model_ws = BaseNetWeightShare(batch_normalization = True, dropout = 0.5)
-  train_model(model_ws, train_input, train_target, mini_batch_size = 25)
-  nb_errors_test_ws = compute_nb_errors(model_ws, test_input, test_target, mini_batch_size = 25)
-  nb_errors_train_ws = compute_nb_errors(model_ws, train_input, train_target, mini_batch_size = 25)
-
-  print("Test accuracy with weight share: {} " .format(1 - nb_errors_test_ws/n_pairs))
-  print("Train accuracy with weight share: {} " .format(1 - nb_errors_train_ws/n_pairs))
-
-  model_ws_aux = BaseNetWeightShareAux(batch_normalization = True, dropout = 0.5)
-  train_model_with_aux_loss(model_ws_aux, train_input, train_target, train_classes, mini_batch_size = 25)
-  nb_errors_test_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
-  nb_errors_train_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, train_input, train_target, mini_batch_size = 25)
-
-  print("Test accuracy with weight share and aux. loss: {} " .format(1 - nb_errors_test_ws_aux/n_pairs))
-  print("Train accuracy with weight share and aux. loss: {} " .format(1 - nb_errors_train_ws_aux/n_pairs))
+  best_ws_aux_params = max(model_ws_aux_mean.items(), key = lambda k : k[1])
+  print('Best accuracy with BaseNetWeightShareAux: {:.3f} +/- {}.'.format(model_ws_aux_mean[best_ws_aux_params], model_ws_aux_std[best_ws_aux_params])) 
