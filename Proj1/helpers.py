@@ -55,7 +55,7 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
 def performance_estimation(datasets):
     n = 1000
     # Parameter grid
-    lrs = [1e-4, 1e-3, 1e-2, 1e-1,1]
+    lrs = [1e-5,1e-4, 1e-3, 1e-2, 1e-1]
     batch_sizes = [1, 5, 10, 20, 50, 100]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
@@ -124,7 +124,7 @@ def performance_estimation(datasets):
         model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
         model_ws_aux_std[param_combo] = model_ws_aux_scores.std().item()
 
-    # Return means and stadard deviations for each model
+    # Return means and standard deviations for each model and param combo
     return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
 
 
