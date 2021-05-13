@@ -122,8 +122,8 @@ def performance_estimation(datasets):
         model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
         model_ws_aux_std[param_combo] = model_ws_aux_scores.std().item()
 
-        # Return means and stadard deviations for each model
-        return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
+    # Return means and stadard deviations for each model
+    return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
 
 
 
