@@ -81,8 +81,10 @@ def performance_estimation(datasets):
         model_ws_mean[param_combo] = []
         model_ws_aux_mean[param_combo] = []
         lr, batch_size, bn, dropout = param_combo
+        if (batch_size == 1 and bn):
+            continue
         # Train each model with each dataset with the given param combination, save accuracy for each dataset
-        for train_input, train_target, train_classes, test_input, test_target, test_classes in datasets:
+        for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
             model_base = BaseNet(batch_normalization=bn, dropout=dropout)
             model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
             model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
