@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
   best_ws_params = max(model_ws_mean.items(), key = lambda k : k[1])
   print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
-  print('Best accuracy with BaseNetWeightShare: {:.3f} +/- {:.3f}.'.format(model_ws_mean[best_ws_params], model_base_std[best_ws_params])) 
+  print('Best accuracy with BaseNetWeightShare: {:.3f} +/- {:.3f}.'.format(model_ws_mean[best_ws_params], model_ws_std[best_ws_params])) 
 
   best_ws_aux_params = max(model_ws_aux_mean.items(), key = lambda k : k[1])
   print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
