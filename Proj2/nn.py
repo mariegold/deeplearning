@@ -45,6 +45,8 @@ class Linear(Module):
             self.gain = 2.0**0.5
         if act == 'tanh':
             self.gain = 5.0/3.0
+        if act == 'leaky':
+            self.gain = (2.0 / (1 + 0.05**2))
 
         self.param_init()
 
@@ -58,7 +60,6 @@ class Linear(Module):
         return gradwrtoutput @ self.w
 
     def param_init(self):
-        # can implement different inits
         self.w = torch.empty((self.output_dim, self.input_dim)).normal_(0, self.gain * self.sd)
         self.b = torch.empty((1, self.output_dim)).normal_(0, self.gain * self.sd)
 
@@ -118,6 +119,22 @@ class ReLu(Module):
     def backward(self, gradwrtoutput):
         return gradwrtoutput * (self.output > 0)
 
+class LeakyReLU(Module):
+    def __init__(self, a = 0.05):
+        super().__init__()
+
+        self.output = None
+        self.a = a
+
+    def forward(self, input):
+        self.output = input.clamp(min=0) + self.a * input.clamp(max=0)
+        return self.output
+
+    def backward(self, gradwrtoutput):
+        gradwrtrelu = self.output.clone()
+        gradwrtrelu[gradwrtrelu < 0] = self.a
+        gradwrtrelu[gradwrtrelu > 0] = 1
+        return gradwrtoutput * gradwrtrelu
 
 class Tanh(Module):
     def __init__(self):
@@ -131,20 +148,6 @@ class Tanh(Module):
 
     def backward(self, gradwrtoutput):
         return gradwrtoutput * (1 - self.output**2)
-
-class Sigmoid(Module):
-    def __init__(self):
-        super().__init__()
-
-        self.output = None
-
-    def forward(self, input):
-        self.output = input.sigmoid()
-        return self.output
-
-    # Use identity o'(x) = o(x) * (1-o(x))
-    def backward(self, gradwrtoutput):
-        return gradwrtoutput * self.output * (1 - self.output)
 
 # Loss functions
 class LossMSE(Module):
@@ -183,7 +186,8 @@ class LossCrossEntropy(Module):
         return self.output.softmax(dim=1) - self.target
 
 # Optimizers
-class SGD():
+class SGD(object):
+
     def __init__(self, params, lr):
         self.params = params
         self.lr = lr
@@ -192,7 +196,8 @@ class SGD():
         for (param, param_grad, _, _) in self.params:
             param.sub_(self.lr * param_grad)
 
-class Adam():
+class Adam(object):
+
     def __init__(self, params, lr, beta1 = 0.9, beta2 = 0.999, eps = 1e-8):
         self.params = params
         self.lr = lr
