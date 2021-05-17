@@ -20,7 +20,7 @@ class Module(object):
 ## Modules
 class Linear(Module):
 
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim, act=None):
         super().__init__()
 
         self.input_dim = input_dim
@@ -37,6 +37,15 @@ class Linear(Module):
         self.b_m = torch.empty((1, self.output_dim))
         self.b_v = torch.empty((1, self.output_dim))
 
+        self.gain = 1
+        self.sd = 1
+        if act != None:
+            self.sd = (2/(self.output_dim + self.input_dim))**0.5
+        if act == 'relu':
+            self.gain = 2.0**0.5
+        if act == 'tanh':
+            self.gain = 5.0/3.0
+
         self.param_init()
 
     def forward(self, input):
@@ -50,8 +59,8 @@ class Linear(Module):
 
     def param_init(self):
         # can implement different inits
-        self.w = torch.empty((self.output_dim, self.input_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
-        self.b = torch.empty((1, self.output_dim)).normal_(0, (2/(self.output_dim + self.input_dim))**0.5)
+        self.w = torch.empty((self.output_dim, self.input_dim)).normal_(0, self.gain * self.sd)
+        self.b = torch.empty((1, self.output_dim)).normal_(0, self.gain * self.sd)
 
         self.w_m.zero_()
         self.w_v.zero_()
@@ -135,7 +144,7 @@ class Sigmoid(Module):
 
     # Use identity o'(x) = o(x) * (1-o(x))
     def backward(self, gradwrtoutput):
-        return gradwrtoutput * self.output * (1 - self.output)        
+        return gradwrtoutput * self.output * (1 - self.output)
 
 # Loss functions
 class LossMSE(Module):
@@ -154,6 +163,24 @@ class LossMSE(Module):
 
     def backward(self):
         return 2*(self.output - self.target) / self.target.size(0)
+
+class LossCrossEntropy(Module):
+    def __init__(self):
+        super().__init__()
+
+        self.output = None
+        self.target = None
+
+    def forward(self, output, target):
+        self.output = output
+        # Convert target to one hot encoding
+        target_one_hot = torch.empty((target.size(0), 2)).zero_()
+        self.target = target_one_hot.scatter_(1, target.view(-1,1), 1)
+        entropy = (- self.target * self.output.softmax(dim=1).log()).sum()
+        return entropy
+
+    def backward(self):
+        return self.output.softmax(dim=1) - self.target
 
 # Optimizers
 class SGD():
@@ -180,4 +207,4 @@ class Adam():
             param_m_hat = param_m / (1 - self.beta1 ** self.t)
             param_v = self.beta2 * param_v + (1 - self.beta2) * (param_grad ** 2)
             param_v_hat = param_v / (1 - self.beta2 ** self.t)
-            param.sub_(self.lr * (param_m_hat / (param_v_hat.sqrt() + self.eps)))    
+            param.sub_(self.lr * (param_m_hat / (param_v_hat.sqrt() + self.eps)))
