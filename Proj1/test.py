@@ -17,17 +17,17 @@ if __name__ == '__main__':
   # Find hyperparameter setting for each model that achieves the best mean accuracy
   # Print the hyperparameter values, mean accuracy and the corresponding std
   best_base_params = max(model_base_mean.items(), key = lambda k : k[1])
-  print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNet:', best_base_params) 
+  print('Best (lr, use_bn, dropout rate) combination with BaseNet:', best_base_params) 
   print('Best accuracy with BaseNet: {:.3f} +/- {:.3f}.'.format(model_base_mean[best_base_params], model_base_std[best_base_params])) 
 
   best_aux_params = max(model_aux_mean.items(), key = lambda k : k[1])
-  print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNetAux:', best_aux_params) 
+  print('Best (lr, use_bn, dropout rate) combination with BaseNetAux:', best_aux_params) 
   print('Best accuracy with BaseNetAux: {:.3f} +/- {:.3f}.'.format(model_aux_mean[best_aux_params], model_aux_std[best_aux_params])) 
 
   best_ws_params = max(model_ws_mean.items(), key = lambda k : k[1])
-  print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
+  print('Best (lr, use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
   print('Best accuracy with BaseNetWeightShare: {:.3f} +/- {:.3f}.'.format(model_ws_mean[best_ws_params], model_ws_std[best_ws_params])) 
 
   best_ws_aux_params = max(model_ws_aux_mean.items(), key = lambda k : k[1])
-  print('Best (lr, mini_batch_size, use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
+  print('Best (lr, use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
   print('Best accuracy with BaseNetWeightShareAux: {:.3f} +/- {:.3f}.'.format(model_ws_aux_mean[best_ws_aux_params], model_ws_aux_std[best_ws_aux_params])) 

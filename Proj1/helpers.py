@@ -56,13 +56,11 @@ def performance_estimation(datasets):
     n = 1000
     # Parameter grid
     lrs = [1e-5,1e-4, 1e-3, 1e-2, 1e-1]
-    batch_sizes = [1, 5, 10, 20, 50, 100]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
 
-    param_combinatinos = [(lr, batch_size, bn, dropout) 
+    param_combinatinos = [(lr, bn, dropout) 
         for lr in lrs
-        for batch_size in batch_sizes 
         for bn in use_bn 
         for dropout in dropout_rates]
     # For saving mean and std across datasets for each model and parameter combination    
@@ -80,9 +78,7 @@ def performance_estimation(datasets):
         model_aux_mean[param_combo] = []
         model_ws_mean[param_combo] = []
         model_ws_aux_mean[param_combo] = []
-        lr, batch_size, bn, dropout = param_combo
-        if (batch_size == 1 and bn):
-            continue
+        lr, bn, dropout = param_combo
         # Train each model with each dataset with the given param combination, save accuracy for each dataset
         for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
             model_base = BaseNet(batch_normalization=bn, dropout=dropout)
@@ -90,19 +86,19 @@ def performance_estimation(datasets):
             model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
             model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
             
-            train_model(model_base, train_input, train_target, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            train_model(model_base, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_base = compute_nb_errors(model_base, test_input, test_target, mini_batch_size = 25)
             model_base_mean[param_combo].append(1-nb_errors_base/n)
 
-            train_model_with_aux_loss(model_aux, train_input, train_target, train_classes, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            train_model_with_aux_loss(model_aux, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_aux = compute_nb_errors_with_aux_loss(model_aux, test_input, test_target, mini_batch_size = 25)
             model_aux_mean[param_combo].append(1-nb_errors_aux/n)
 
-            train_model(model_ws, train_input, train_target, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            train_model(model_ws, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_ws = compute_nb_errors(model_ws, test_input, test_target, mini_batch_size = 25)
             model_ws_mean[param_combo].append(1-nb_errors_ws/n)
 
-            train_model_with_aux_loss(model_base, train_input, train_target, train_classes, mini_batch_size = batch_size, nb_epochs=25, lr=lr)
+            train_model_with_aux_loss(model_base, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
             model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
 
