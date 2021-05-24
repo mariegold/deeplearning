@@ -9,6 +9,10 @@ if __name__ == '__main__':
   datasets = []
   for i in range(10):
     train_input, train_target, train_classes, test_input, test_target, test_classes = generate_pair_sets(n)
+    # Standardize dataset
+    mu, std = train_input.mean(), train_input.std()
+    train_input.sub_(mu).div_(std)
+    test_input.sub_(mu).div_(std)
     datasets.append((train_input, train_target, train_classes, test_input, test_target, test_classes))
   
   # Get mean and std accuracy for each model across datasets for different hyperparamer settings
