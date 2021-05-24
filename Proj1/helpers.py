@@ -98,7 +98,7 @@ def performance_estimation(datasets):
             nb_errors_ws = compute_nb_errors(model_ws, test_input, test_target, mini_batch_size = 25)
             model_ws_mean[param_combo].append(1-nb_errors_ws/n)
 
-            train_model_with_aux_loss(model_base, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+            train_model_with_aux_loss(model_ws_aux, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
             model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
 
