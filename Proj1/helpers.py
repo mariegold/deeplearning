@@ -52,8 +52,7 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
 
 # Try all models with different learning rates, batch sizes, dropout rates and varying use of bn on for multiple datasets
 # Record mean and standard deviation of accuracy of each parameter setting
-def performance_estimation(datasets):
-    n = 1000
+def performance_estimation(datasets, n):
     # Parameter grid
     lrs = [1e-5,1e-4, 1e-3, 1e-2, 1e-1]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
