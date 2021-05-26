@@ -58,17 +58,17 @@ def cross_validate(train_input, train_target, train_classes, n, k = 5):
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
 
-    param_combinatinos = [(lr, bn, dropout) 
+    param_combinatinos = [(lr, bn, dropout)
         for lr in lrs
-        for bn in use_bn 
+        for bn in use_bn
         for dropout in dropout_rates]
-    # For saving mean across folds     
-    model_base_mean = {} 
+    # For saving mean across folds
+    model_base_mean = {}
     model_aux_mean = {}
     model_ws_mean = {}
     model_ws_aux_mean = {}
 
-    fold_size = n // k 
+    fold_size = n // k
 
     for param_combo in param_combinatinos:
         model_base_mean[param_combo] = []
@@ -109,7 +109,7 @@ def cross_validate(train_input, train_target, train_classes, n, k = 5):
             nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, val_input_fold, val_target_fold, mini_batch_size = 25)
             model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
 
-        
+
         # Compute mean and standard deviation across the datasets for each model and param combo
         model_base_scores = torch.FloatTensor(model_base_mean[param_combo])
         model_base_mean[param_combo] = model_base_scores.mean().item()
@@ -122,7 +122,7 @@ def cross_validate(train_input, train_target, train_classes, n, k = 5):
 
         model_ws_aux_scores = torch.FloatTensor(model_ws_aux_mean[param_combo])
         model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
-        
+
     # Return means for each model and param combo
     return model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean
 
@@ -135,18 +135,18 @@ def performance_estimation_param_fit(datasets, n):
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
 
-    param_combinatinos = [(lr, bn, dropout) 
+    param_combinatinos = [(lr, bn, dropout)
         for lr in lrs
-        for bn in use_bn 
+        for bn in use_bn
         for dropout in dropout_rates]
-    # For saving mean and std across datasets for each model and parameter combination    
-    model_base_mean = {} 
+    # For saving mean and std across datasets for each model and parameter combination
+    model_base_mean = {}
     model_base_std = {}
-    model_aux_mean = {} 
+    model_aux_mean = {}
     model_aux_std = {}
-    model_ws_mean = {} 
+    model_ws_mean = {}
     model_ws_std = {}
-    model_ws_aux_mean = {} 
+    model_ws_aux_mean = {}
     model_ws_aux_std = {}
 
     for param_combo in param_combinatinos:
@@ -161,7 +161,7 @@ def performance_estimation_param_fit(datasets, n):
             model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
             model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
             model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
-            
+
             train_model(model_base, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
             nb_errors_base = compute_nb_errors(model_base, test_input, test_target, mini_batch_size = 25)
             model_base_mean[param_combo].append(1-nb_errors_base/n)
@@ -178,7 +178,7 @@ def performance_estimation_param_fit(datasets, n):
             nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
             model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
 
-        
+
         # Compute mean and standard deviation across the datasets for each model and param combo
         model_base_scores = torch.FloatTensor(model_base_mean[param_combo])
         model_base_mean[param_combo] = model_base_scores.mean().item()
@@ -199,21 +199,22 @@ def performance_estimation_param_fit(datasets, n):
     # Return means and standard deviations for each model and param combo
     return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
 
-    
+
 def performance_estimation(datasets, model, lr, aux_loss, n):
     # For saving scores across runs
-    model_mean = [] 
+    model_mean = []
     # Train model with each dataset, save accuracy for each dataset
     for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
+        model_copy = copy.deepcopy(model)
         if aux_loss:
-            train_model_with_aux_loss(copy.deepcopy(model), train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors = compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 25)
+            train_model_with_aux_loss(model_copy, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+            nb_errors = compute_nb_errors_with_aux_loss(model_copy, test_input, test_target, mini_batch_size = 25)
             model_mean.append(1 - nb_errors/n)
         else:
-            train_model(copy.deepcopy(model), train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors = compute_nb_errors(model, test_input, test_target, mini_batch_size = 25)
+            train_model(model_copy, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
+            nb_errors = compute_nb_errors(model_copy, test_input, test_target, mini_batch_size = 25)
             model_mean.append(1 - nb_errors/n)
-    
+
     # Compute mean and standard deviation across the datasets for each model and param combo
     model_scores = torch.FloatTensor(model_mean)
     model_mean = model_scores.mean().item()
@@ -221,6 +222,3 @@ def performance_estimation(datasets, model, lr, aux_loss, n):
 
     # Return mean and standard deviation
     return model_mean, model_std
-
-
-
