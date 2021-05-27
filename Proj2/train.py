@@ -9,6 +9,7 @@ torch.manual_seed(1)
 def train_model(model, criterion, train_input, train_target,
                 mini_batch_size = 50, nb_epochs = 25, lr = 0.001,
                 sgd = True, verbatim = False):
+    """ Trains a model using the loss and optimizer of choice. """
     if sgd:
         optimizer = SGD(model.param(), lr)
     else:
@@ -27,6 +28,7 @@ def train_model(model, criterion, train_input, train_target,
             print("Epoch {}: training loss = {}" .format(e, cum_loss.item()))
 
 def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
+    """ Computes the number of errors a model makes on the test set. """
     nb_errors = 0
     predictions = []
     for b in range(0, test_input.size(0), mini_batch_size):
@@ -39,6 +41,7 @@ def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
     return nb_errors
 
 def performance_estimation(datasets, model, criterion, n):
+    """ Trains a model using the loss and optimizer of choice. """
     # Parameter grid
     lrs = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
     batch_size = 25
@@ -55,7 +58,7 @@ def performance_estimation(datasets, model, criterion, n):
         model_adam_std[lr] = []
         # Train with each dataset with the given learning rate using SGD and Adam, save accuracy for each dataset
         for train_input, train_target, test_input, test_target in datasets:
-            # Deepcopy is necessary so that we train with the model from scratch
+            # Deepcopy is necessary so that we train with the model from scratch with the same initialization
             model_sgd = copy.deepcopy(model)
             train_model(model_sgd, criterion, train_input, train_target,
                         mini_batch_size = batch_size, nb_epochs=30, lr=lr, sgd = True)
@@ -81,15 +84,18 @@ def performance_estimation(datasets, model, criterion, n):
     return model_sgd_mean, model_sgd_std, model_adam_mean, model_adam_std
 
 def train_tune_evaluate(models_list, activation_names, criterions_list, criterion_names, n = 1000, n_runs = 10):
-    print("Training and tuning, this might take a while...")
+    """
+    Generates datasets for tuning and calls performance estimation for each
+    model, activation and criterion combination.
+    """
 
-    # Datasets for evaluation
+    # Generate datasets for evaluation
     datasets = []
     for _ in range(n_runs):
         train_input_tune, train_target_tune = generate_dataset(n)
         test_input_tune, test_target_tune = generate_dataset(n)
         mu, std = train_input_tune.mean(), train_input_tune.std()
-        train_input_tune.sub_(mu).div_(std)
+        train_input_tune.sub_(mu).div_(std) # standardize
         test_input_tune.sub_(mu).div_(std)
 
         datasets.append((train_input_tune, train_target_tune, test_input_tune, test_target_tune))
@@ -109,10 +115,11 @@ def train_tune_evaluate(models_list, activation_names, criterions_list, criterio
             print('With accuracy: {:.3f} +/- {:.3f}.'.format(model_adam_mean[best_adam_params[0]], model_adam_std[best_adam_params[0]]))
 
 def train_evaluate_best(train_input, train_target, test_input, test_target, model, criterion, lr, sgd):
+    """ Trains and evaluates the best model, printing the loss after each epoch. """
     train_model(model, criterion, train_input, train_target,
                 mini_batch_size = 25, nb_epochs=30, lr=lr, sgd = sgd, verbatim = True)
+
     test_nb_errors = compute_nb_errors(model, test_input, test_target)
     train_nb_errors = compute_nb_errors(model, train_input, train_target)
-
     print('Training accuracy: {:.3f}' .format(1-train_nb_errors/train_target.size(0)))
     print('Test accuracy: {:.3f}' .format(1-test_nb_errors/test_target.size(0)))

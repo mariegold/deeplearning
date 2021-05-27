@@ -1,19 +1,22 @@
 from nn import *
 from train import *
-
 import math
 import torch
 
 torch.set_grad_enabled(False)
 torch.manual_seed(1)
 
+# -------------------------------------------------------------------------------------
+# When True, it runs the model required by the project description (MSE loss and SGD)
+run_base = True
 # Set to True if you want to see the results for all the models (averaged over 10 runs)
-run_training = True
+run_training = False
 # Set to True if you want to see the training of the best model only (1 run)
-run_best = True
+run_best = False
+# -------------------------------------------------------------------------------------
 
 def generate_dataset(n):
-    """ Generates toy dataset; points in [0,1]x[0,1] such that the labels are 1 inside
+    """ Generates toy dataset; points in [0,1] x [0,1] such that the labels are 1 inside
      the disk centered at (0.5, 0.5) with radius 1/sqrt(2*pi) and 0 otherwise """
 
     input = torch.empty(n, 2).uniform_(0, 1)
@@ -53,8 +56,14 @@ if __name__ == '__main__':
     criterions_list = [LossMSE(), LossCrossEntropy()]
     criterion_names = ["Mean Squared Error", "Cross Entropy"]
 
+    if run_base:
+        print("Training model with SGD and MSE loss...")
+        train_evaluate_best(train_input, train_target, test_input, test_target,
+                   model = model_relu, criterion = LossMSE(), lr = 0.01, sgd = True)
     if run_training:
+        print("Training and tuning, this might take a while...")
         train_tune_evaluate(models_list, activation_names, criterions_list, criterion_names)
     if run_best:
+        print("Training the best model overall...")
         train_evaluate_best(train_input, train_target, test_input, test_target,
                    model = model_relu, criterion = LossCrossEntropy(), lr = 0.001, sgd = True)
