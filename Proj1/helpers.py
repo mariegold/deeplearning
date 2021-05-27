@@ -129,7 +129,7 @@ def cross_validate(train_input, train_target, train_classes, n, k = 5):
 
 # Try all models with different learning rates, batch sizes, dropout rates and varying use of bn on for multiple datasets
 # Record mean and standard deviation of accuracy of each parameter setting
-def performance_estimation_param_fit(datasets, n):
+def performance_estimation_param_tune(datasets, n):
     # Parameter grid
     lrs = [1e-4, 1e-3, 1e-2, 1e-1]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
@@ -205,13 +205,14 @@ def performance_estimation(datasets, model, lr, aux_loss, n):
     model_mean = [] 
     # Train model with each dataset, save accuracy for each dataset
     for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
+        model_copy = copy.deepcopy(model)
         if aux_loss:
-            train_model_with_aux_loss(copy.deepcopy(model), train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors = compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 25)
+            train_model_with_aux_loss(model_copy, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+            nb_errors = compute_nb_errors_with_aux_loss(model_copy, test_input, test_target, mini_batch_size = 25)
             model_mean.append(1 - nb_errors/n)
         else:
-            train_model(copy.deepcopy(model), train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors = compute_nb_errors(model, test_input, test_target, mini_batch_size = 25)
+            train_model(model_copy, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
+            nb_errors = compute_nb_errors(model_copy, test_input, test_target, mini_batch_size = 25)
             model_mean.append(1 - nb_errors/n)
     
     # Compute mean and standard deviation across the datasets for each model and param combo
@@ -222,5 +223,44 @@ def performance_estimation(datasets, model, lr, aux_loss, n):
     # Return mean and standard deviation
     return model_mean, model_std
 
+def param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, n):
+    # Parameter grid
+    lrs = [1e-4, 1e-3, 1e-2, 1e-1] 
+    dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
+    use_bn = [True, False]
+    
+    param_combinatinos = [(lr, bn, dropout) 
+        for lr in lrs
+        for bn in use_bn 
+        for dropout in dropout_rates]    
+    
+    model_base_mean = {} 
+    model_aux_mean = {}
+    model_ws_mean = {}
+    model_ws_aux_mean = {}
+    for param_combo in param_combinatinos:
+        lr, bn, dropout = param_combo
 
+        model_base = BaseNet(batch_normalization=bn, dropout=dropout)
+        model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
+        model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
+        model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
+
+        train_model(model_base, init_train_input, init_train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors_base = compute_nb_errors(model_base, init_test_input, init_test_target, mini_batch_size = 25)
+        model_base_mean[param_combo] = 1-nb_errors_base/n
+
+        train_model_with_aux_loss(model_aux, init_train_input, init_train_target, init_train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors_aux = compute_nb_errors_with_aux_loss(model_aux, init_test_input, init_test_target, mini_batch_size = 25)
+        model_aux_mean[param_combo]= 1-nb_errors_aux/n
+
+        train_model(model_ws, init_train_input, init_train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors_ws = compute_nb_errors(model_ws, init_test_input, init_test_target, mini_batch_size = 25)
+        model_ws_mean[param_combo]= 1-nb_errors_ws/n
+
+        train_model_with_aux_loss(model_ws_aux, init_train_input, init_train_target, init_train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, init_test_input, init_test_target, mini_batch_size = 25)
+        model_ws_aux_mean[param_combo] = 1-nb_errors_ws_aux/n
+
+    return model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean
 
