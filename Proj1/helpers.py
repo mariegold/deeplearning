@@ -52,14 +52,12 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
     return nb_errors
 
 # Assumes k divides the training input size
-def cross_validate(train_input, train_target, train_classes, n, k = 5):
+def cross_validate(train_input, train_target, train_classes, lr, n, k = 5):
     # Parameter grid
-    lrs = [1e-4, 1e-3, 1e-2, 1e-1]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
 
-    param_combinatinos = [(lr, bn, dropout)
-        for lr in lrs
+    param_combinatinos = [(bn, dropout)
         for bn in use_bn
         for dropout in dropout_rates]
     # For saving mean across folds
@@ -129,14 +127,12 @@ def cross_validate(train_input, train_target, train_classes, n, k = 5):
 
 # Try all models with different learning rates, batch sizes, dropout rates and varying use of bn on for multiple datasets
 # Record mean and standard deviation of accuracy of each parameter setting
-def performance_estimation_param_tune(datasets, n):
+def performance_estimation_param_tune(datasets, lr, n):
     # Parameter grid
-    lrs = [1e-4, 1e-3, 1e-2, 1e-1]
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
 
-    param_combinatinos = [(lr, bn, dropout)
-        for lr in lrs
+    param_combinatinos = [(bn, dropout)
         for bn in use_bn
         for dropout in dropout_rates]
     # For saving mean and std across datasets for each model and parameter combination
@@ -223,14 +219,12 @@ def performance_estimation(datasets, model, lr, aux_loss, n):
     # Return mean and standard deviation
     return model_mean, model_std
 
-def param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, n):
-    # Parameter grid
-    lrs = [1e-4, 1e-3, 1e-2, 1e-1] 
+def param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, lr, n):
+    # Parameter grid 
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
     
-    param_combinatinos = [(lr, bn, dropout) 
-        for lr in lrs
+    param_combinatinos = [(bn, dropout) 
         for bn in use_bn 
         for dropout in dropout_rates]    
     
