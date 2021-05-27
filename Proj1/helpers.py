@@ -73,7 +73,7 @@ def cross_validate(train_input, train_target, train_classes, lr, n, k = 5):
         model_aux_mean[param_combo] = []
         model_ws_mean[param_combo] = []
         model_ws_aux_mean[param_combo] = []
-        lr, bn, dropout = param_combo
+        bn, dropout = param_combo
 
         model_base = BaseNet(batch_normalization=bn, dropout=dropout)
         model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
@@ -150,7 +150,7 @@ def performance_estimation_param_tune(datasets, lr, n):
         model_aux_mean[param_combo] = []
         model_ws_mean[param_combo] = []
         model_ws_aux_mean[param_combo] = []
-        lr, bn, dropout = param_combo
+        bn, dropout = param_combo
         # Train each model with each dataset with the given param combination, save accuracy for each dataset
         for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
             model_base = BaseNet(batch_normalization=bn, dropout=dropout)
