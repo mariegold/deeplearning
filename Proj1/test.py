@@ -13,19 +13,19 @@ if __name__ == '__main__':
   model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean = param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, lr, n)
 
   best_base_params, init_base_acc = max(model_base_mean.items(), key = lambda k : k[1])
-  print('Best (lr, use_bn, dropout rate) combination with BaseNet:', best_base_params) 
+  print('Best (use_bn, dropout rate) combination with BaseNet:', best_base_params) 
   print('Initial dataset accuracy with BaseNet: {:.3f}'.format(init_base_acc)) 
 
   best_aux_params, init_aux_acc = max(model_aux_mean.items(), key = lambda k : k[1])
-  print('Best (lr, use_bn, dropout rate) combination with BaseNetAux:', best_aux_params) 
+  print('Best (use_bn, dropout rate) combination with BaseNetAux:', best_aux_params) 
   print('Initial dataset accuracy with BaseNetAux: {:.3f}'.format(init_aux_acc))
 
   best_ws_params, init_wc_acc = max(model_ws_mean.items(), key = lambda k : k[1])
-  print('Best (lr, use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
+  print('Best (use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
   print('Initial dataset accuracy with BaseNetWeightShare: {:.3f}'.format(init_wc_acc)) 
 
   best_ws_aux_params, init_ws_aux_acc = max(model_ws_aux_mean.items(), key = lambda k : k[1])
-  print('Best (lr, use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
+  print('Best (use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
   print('Initial dataset accuracy with BaseNetWeightShareAux: {:.3f}'.format(init_ws_aux_acc)) 
 
   best_base_bn, best_base_dropout = best_base_params
