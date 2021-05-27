@@ -233,7 +233,7 @@ def param_tune(init_train_input, init_train_target, init_train_classes, init_tes
     model_ws_mean = {}
     model_ws_aux_mean = {}
     for param_combo in param_combinatinos:
-        lr, bn, dropout = param_combo
+        bn, dropout = param_combo
 
         model_base = BaseNet(batch_normalization=bn, dropout=dropout)
         model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
