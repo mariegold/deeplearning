@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch import optim
 import copy
+from dlc_practical_prologue import generate_pair_sets
 from models import *
 
 def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
@@ -50,150 +51,6 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
             if test_target[b + k] != predicted_classes[k]:
                 nb_errors = nb_errors + 1
     return nb_errors
-
-# Assumes k divides the training input size
-def cross_validate(train_input, train_target, train_classes, lr, n, k = 5):
-    # Parameter grid
-    dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
-    use_bn = [True, False]
-
-    param_combinatinos = [(bn, dropout)
-        for bn in use_bn
-        for dropout in dropout_rates]
-    # For saving mean across folds
-    model_base_mean = {}
-    model_aux_mean = {}
-    model_ws_mean = {}
-    model_ws_aux_mean = {}
-
-    fold_size = n // k
-
-    for param_combo in param_combinatinos:
-        model_base_mean[param_combo] = []
-        model_aux_mean[param_combo] = []
-        model_ws_mean[param_combo] = []
-        model_ws_aux_mean[param_combo] = []
-        bn, dropout = param_combo
-
-        model_base = BaseNet(batch_normalization=bn, dropout=dropout)
-        model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
-        model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
-        model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
-
-
-        for i in range(k):
-            # Construct training and validation data for this fold
-            start = i * fold_size
-            end = start + fold_size
-            train_input_fold = train_input[start : end]
-            val_input_fold = torch.cat((train_input[:start], train_input[end:]),0)
-            train_target_fold = train_target[start : end]
-            val_target_fold = torch.cat((train_target[:start], train_target[end:]),0)
-            train_classes_fold = train_classes[start : end]
-
-            train_model(copy.deepcopy(model_base), train_input_fold, train_target_fold, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_base = compute_nb_errors(model_base, val_input_fold, val_target_fold, mini_batch_size = 25)
-            model_base_mean[param_combo].append(1-nb_errors_base/n)
-
-            train_model_with_aux_loss(copy.deepcopy(model_aux), train_input_fold, train_target_fold, train_classes_fold, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_aux = compute_nb_errors_with_aux_loss(model_aux, val_input_fold, val_target_fold, mini_batch_size = 25)
-            model_aux_mean[param_combo].append(1-nb_errors_aux/n)
-
-            train_model(copy.deepcopy(model_ws), train_input_fold, train_target_fold, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_ws = compute_nb_errors(model_ws, val_input_fold, val_target_fold, mini_batch_size = 25)
-            model_ws_mean[param_combo].append(1-nb_errors_ws/n)
-
-            train_model_with_aux_loss(copy.deepcopy(model_ws_aux), train_input_fold, train_target_fold, train_classes_fold, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, val_input_fold, val_target_fold, mini_batch_size = 25)
-            model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
-
-
-        # Compute mean and standard deviation across the datasets for each model and param combo
-        model_base_scores = torch.FloatTensor(model_base_mean[param_combo])
-        model_base_mean[param_combo] = model_base_scores.mean().item()
-
-        model_aux_scores = torch.FloatTensor(model_aux_mean[param_combo])
-        model_aux_mean[param_combo] = model_aux_scores.mean().item()
-
-        model_ws_scores = torch.FloatTensor(model_ws_mean[param_combo])
-        model_ws_mean[param_combo] = model_ws_scores.mean().item()
-
-        model_ws_aux_scores = torch.FloatTensor(model_ws_aux_mean[param_combo])
-        model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
-
-    # Return means for each model and param combo
-    return model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean
-
-
-# Try all models with different learning rates, batch sizes, dropout rates and varying use of bn on for multiple datasets
-# Record mean and standard deviation of accuracy of each parameter setting
-def performance_estimation_param_tune(datasets, lr, n):
-    # Parameter grid
-    dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
-    use_bn = [True, False]
-
-    param_combinatinos = [(bn, dropout)
-        for bn in use_bn
-        for dropout in dropout_rates]
-    # For saving mean and std across datasets for each model and parameter combination
-    model_base_mean = {}
-    model_base_std = {}
-    model_aux_mean = {}
-    model_aux_std = {}
-    model_ws_mean = {}
-    model_ws_std = {}
-    model_ws_aux_mean = {}
-    model_ws_aux_std = {}
-
-    for param_combo in param_combinatinos:
-        model_base_mean[param_combo] = []
-        model_aux_mean[param_combo] = []
-        model_ws_mean[param_combo] = []
-        model_ws_aux_mean[param_combo] = []
-        bn, dropout = param_combo
-        # Train each model with each dataset with the given param combination, save accuracy for each dataset
-        for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
-            model_base = BaseNet(batch_normalization=bn, dropout=dropout)
-            model_aux = BaseNetAux(batch_normalization=bn, dropout=dropout)
-            model_ws = BaseNetWeightShare(batch_normalization=bn, dropout=dropout)
-            model_ws_aux = BaseNetWeightShareAux(batch_normalization=bn, dropout=dropout)
-
-            train_model(model_base, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_base = compute_nb_errors(model_base, test_input, test_target, mini_batch_size = 25)
-            model_base_mean[param_combo].append(1-nb_errors_base/n)
-
-            train_model_with_aux_loss(model_aux, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_aux = compute_nb_errors_with_aux_loss(model_aux, test_input, test_target, mini_batch_size = 25)
-            model_aux_mean[param_combo].append(1-nb_errors_aux/n)
-
-            train_model(model_ws, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_ws = compute_nb_errors(model_ws, test_input, test_target, mini_batch_size = 25)
-            model_ws_mean[param_combo].append(1-nb_errors_ws/n)
-
-            train_model_with_aux_loss(model_ws_aux, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
-            nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, test_input, test_target, mini_batch_size = 25)
-            model_ws_aux_mean[param_combo].append(1-nb_errors_ws_aux/n)
-
-
-        # Compute mean and standard deviation across the datasets for each model and param combo
-        model_base_scores = torch.FloatTensor(model_base_mean[param_combo])
-        model_base_mean[param_combo] = model_base_scores.mean().item()
-        model_base_std[param_combo] = model_base_scores.std().item()
-
-        model_aux_scores = torch.FloatTensor(model_aux_mean[param_combo])
-        model_aux_mean[param_combo] = model_aux_scores.mean().item()
-        model_aux_std[param_combo] = model_aux_scores.std().item()
-
-        model_ws_scores = torch.FloatTensor(model_ws_mean[param_combo])
-        model_ws_mean[param_combo] = model_ws_scores.mean().item()
-        model_ws_std[param_combo] = model_ws_scores.std().item()
-
-        model_ws_aux_scores = torch.FloatTensor(model_ws_aux_mean[param_combo])
-        model_ws_aux_mean[param_combo] = model_ws_aux_scores.mean().item()
-        model_ws_aux_std[param_combo] = model_ws_aux_scores.std().item()
-
-    # Return means and standard deviations for each model and param combo
-    return model_base_mean, model_base_std, model_aux_mean, model_aux_std, model_ws_mean, model_ws_std, model_ws_aux_mean, model_ws_aux_std
 
 
 def performance_estimation(datasets, model, lr, aux_loss, n):
@@ -258,3 +115,65 @@ def param_tune(init_train_input, init_train_target, init_train_classes, init_tes
 
     return model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean
 
+def train_tune_evaluate(lr, n):
+    # Generate an initial dataset for parameter tuning
+    init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, _ = generate_pair_sets(n)
+    model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean = param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, lr, n)
+
+    best_base_params, init_base_acc = max(model_base_mean.items(), key = lambda k : k[1])
+    print('Best (use_bn, dropout rate) combination with BaseNet:', best_base_params) 
+    print('Initial dataset accuracy with BaseNet: {:.3f}'.format(init_base_acc)) 
+
+    best_aux_params, init_aux_acc = max(model_aux_mean.items(), key = lambda k : k[1])
+    print('Best (use_bn, dropout rate) combination with BaseNetAux:', best_aux_params) 
+    print('Initial dataset accuracy with BaseNetAux: {:.3f}'.format(init_aux_acc))
+
+    best_ws_params, init_wc_acc = max(model_ws_mean.items(), key = lambda k : k[1])
+    print('Best (use_bn, dropout rate) combination with BaseNetWeightShare:', best_ws_params) 
+    print('Initial dataset accuracy with BaseNetWeightShare: {:.3f}'.format(init_wc_acc)) 
+
+    best_ws_aux_params, init_ws_aux_acc = max(model_ws_aux_mean.items(), key = lambda k : k[1])
+    print('Best (use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
+    print('Initial dataset accuracy with BaseNetWeightShareAux: {:.3f}'.format(init_ws_aux_acc)) 
+
+    best_base_bn, best_base_dropout = best_base_params
+    best_model_base = BaseNet(batch_normalization=best_base_bn, dropout=best_base_dropout)
+
+    best_aux_bn, best_aux_dropout = best_aux_params
+    best_model_aux = BaseNetAux(batch_normalization=best_aux_bn, dropout=best_aux_dropout)
+
+    best_ws_bn, best_ws_dropout = best_ws_params
+    best_model_ws = BaseNetWeightShare(batch_normalization=best_ws_bn, dropout=best_ws_dropout)
+
+    best_ws_aux_bn, best_ws_aux_dropout = best_ws_aux_params
+    best_model_ws_aux = BaseNetWeightShareAux(batch_normalization=best_ws_aux_bn, dropout=best_ws_aux_dropout)
+
+    # Generate 10 datasets for performance estimation
+    datasets = []
+    for _ in range(10):
+        train_input, train_target, train_classes, test_input, test_target, test_classes = generate_pair_sets(n)
+        # Standardize dataset
+        mu, std = train_input.mean(), train_input.std()
+        train_input.sub_(mu).div_(std)
+        test_input.sub_(mu).div_(std)
+        datasets.append((train_input, train_target, train_classes, test_input, test_target, test_classes))
+
+    # Find and report means and standard devs
+    base_mean, base_std = performance_estimation(datasets, best_model_base, lr, False, n)
+    print('Final BaseNet accuracy: {:.3f} +/- {:.3f}.'.format(base_mean, base_std))
+    aux_mean, aux_std = performance_estimation(datasets, best_model_aux, lr, True, n)
+    print('Final BaseNetAux accuracy: {:.3f} +/- {:.3f}.'.format(aux_mean, aux_std))
+    ws_mean, ws_std = performance_estimation(datasets, best_model_ws, lr, False, n)
+    print('Final BaseNetWeightShare accuracy: {:.3f} +/- {:.3f}.'.format(ws_mean, ws_std))
+    ws_aux_mean, ws_aux_std = performance_estimation(datasets, best_model_ws_aux, lr, True, n)
+    print('Final BaseNetWeightShareAux accuracy: {:.3f} +/- {:.3f}.'.format(ws_aux_mean, ws_aux_std)) 
+
+def train_evaluate_best(model, train_input, train_target, train_classes, test_input, test_target, aux_loss, lr, n):
+    if aux_loss:
+        train_model_with_aux_loss(model, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors = compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 25)    
+        print('Accuracy of the best model: {:.3f}'.format(1-nb_errors/n))
+    else:
+        train_model(model, train_input, train_target, mini_batch_size = 25, nb_epochs=30, lr=lr)
+        nb_errors = compute_nb_errors(model, test_input, test_target, mini_batch_size = 25)
+        print('Accuracy of the best model: {:.3f}'.format(1-nb_errors/n))

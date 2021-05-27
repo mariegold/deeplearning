@@ -4,6 +4,23 @@
 
 ## Project 1
 
+### Usage
+
+To see the training and accuracy of the best model overall (1 run):
+
+```bash
+python3 Proj1/test.py 
+```
+
+To see the tuning and accuracies (with standard deviations) of all tested models (10 runs), modify `test.py`:
+
+```python
+# test.py 
+run_full = True
+```
+
+and run the same bash command as above. This takes a while to complete (~40 minutes)
+
 ## Project 2
 
 ### Usage
