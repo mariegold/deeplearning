@@ -1,7 +1,8 @@
 import torch
-
 from torch import nn
 from torch.nn import functional as F
+torch.manual_seed(1)
+
 # -------------------------------------------------------------------------------------
   # Each model has two parameters
   # use_bn ... whether the model uses batch normalisation
@@ -11,6 +12,7 @@ from torch.nn import functional as F
   # -------------------------------------------------------------------------------------
 
 # LeNet-like architecture, kernel sizes modified to suit the input size
+
 class BaseNet(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):
         super().__init__()

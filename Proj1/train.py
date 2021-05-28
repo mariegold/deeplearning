@@ -4,6 +4,7 @@ from torch import optim
 import copy
 from dlc_practical_prologue import generate_pair_sets
 from models import *
+torch.manual_seed(1)
 
 def train_model(model, train_input, train_target, mini_batch_size = 25, nb_epochs = 30, lr = 0.1):
     """ Trains a model without auxiliary loss. """
