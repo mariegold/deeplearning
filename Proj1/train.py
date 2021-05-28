@@ -5,7 +5,8 @@ import copy
 from dlc_practical_prologue import generate_pair_sets
 from models import *
 
-def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
+def train_model(model, train_input, train_target, mini_batch_size = 25, nb_epochs = 30, lr = 0.1):
+    """ Trains a model without auxiliary loss. """
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr = lr)
     for e in range(nb_epochs):
@@ -16,7 +17,8 @@ def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epoch
             loss.backward()
             optimizer.step()
 
-def train_model_with_aux_loss(model, train_input, train_target, train_classes, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
+def train_model_with_aux_loss(model, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs = 30, lr = 0.1):
+    """ Trains a model with auxiliary loss. """
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr = lr)
     for e in range(nb_epochs):
@@ -25,12 +27,13 @@ def train_model_with_aux_loss(model, train_input, train_target, train_classes, m
             loss_bool = criterion(output_bool, train_target.narrow(0, b, mini_batch_size))
             loss_digit1 = criterion(output_digit1, train_classes.narrow(0, b, mini_batch_size)[:,0])
             loss_digit2 = criterion(output_digit2, train_classes.narrow(0, b, mini_batch_size)[:,1])
-            loss = loss_bool + loss_digit1 + loss_digit2
+            loss = loss_bool + loss_digit1 + loss_digit2 # Sum up the three losses for the final loss
             model.zero_grad()
             loss.backward()
             optimizer.step()
 
-def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
+def compute_nb_errors(model, test_input, test_target, mini_batch_size = 25):
+    """ Computes the number of errors a model trained without auxiliary loss makes on the test set. """
     nb_errors = 0
     model.eval()
     for b in range(0, test_input.size(0), mini_batch_size):
@@ -41,7 +44,8 @@ def compute_nb_errors(model, test_input, test_target, mini_batch_size = 50):
                 nb_errors = nb_errors + 1
     return nb_errors
 
-def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 50):
+def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 25):
+    """ Computes the number of errors a model trained with auxiliary loss makes on the test set. """
     nb_errors = 0
     model.eval()
     for b in range(0, test_input.size(0), mini_batch_size):
@@ -54,7 +58,11 @@ def compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_s
 
 
 def performance_estimation(datasets, model, lr, aux_loss, n):
-    # For saving scores across runs
+    """ 
+    Trains a model on a set of datasets.
+    Outputs the mean accuracy on the datasets and the corresponding standard deviation.
+    """
+    # For saving scores for each dataset and storing the mean
     model_mean = []
     # Train model with each dataset, save accuracy for each dataset
     for train_input, train_target, train_classes, test_input, test_target, _ in datasets:
@@ -73,10 +81,11 @@ def performance_estimation(datasets, model, lr, aux_loss, n):
     model_mean = model_scores.mean().item()
     model_std = model_scores.std().item()
 
-    # Return mean and standard deviation
+    # Return the mean and standard deviation estimates
     return model_mean, model_std
-
+    
 def param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, lr, n):
+    """ Finds parameter setting that maximalises the test accuracy on an initial dataset. """
     # Parameter grid 
     dropout_rates = [0.0, 0.1, 0.2, 0.5, 0.8]
     use_bn = [True, False]
@@ -84,11 +93,13 @@ def param_tune(init_train_input, init_train_target, init_train_classes, init_tes
     param_combinatinos = [(bn, dropout) 
         for bn in use_bn 
         for dropout in dropout_rates]    
-    
+    # For saving scores for each parameter setting and storing the mean
     model_base_mean = {} 
     model_aux_mean = {}
     model_ws_mean = {}
     model_ws_aux_mean = {}
+
+    # Train each model for each parameter score, save accuracy
     for param_combo in param_combinatinos:
         bn, dropout = param_combo
 
@@ -113,13 +124,15 @@ def param_tune(init_train_input, init_train_target, init_train_classes, init_tes
         nb_errors_ws_aux = compute_nb_errors_with_aux_loss(model_ws_aux, init_test_input, init_test_target, mini_batch_size = 25)
         model_ws_aux_mean[param_combo] = 1-nb_errors_ws_aux/n
 
+    # Return the parameter settings with their mean accuracy for each model
     return model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean
 
 def train_tune_evaluate(lr, n):
-    # Generate an initial dataset for parameter tuning
+    # Parameter tuning on an initial dataset
     init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, _ = generate_pair_sets(n)
     model_base_mean, model_aux_mean, model_ws_mean, model_ws_aux_mean = param_tune(init_train_input, init_train_target, init_train_classes, init_test_input, init_test_target, lr, n)
 
+    # Output the best parameter setting (use_bn, dropout) and the accuracy for the initial dataset 
     best_base_params, init_base_acc = max(model_base_mean.items(), key = lambda k : k[1])
     print('Best (use_bn, dropout rate) combination with BaseNet:', best_base_params) 
     print('Initial dataset accuracy with BaseNet: {:.3f}'.format(init_base_acc)) 
@@ -136,6 +149,7 @@ def train_tune_evaluate(lr, n):
     print('Best (use_bn, dropout rate) combination with BaseNetWeightShareAux:', best_ws_aux_params) 
     print('Initial dataset accuracy with BaseNetWeightShareAux: {:.3f}'.format(init_ws_aux_acc)) 
 
+    # Models with the best parameter settings
     best_base_bn, best_base_dropout = best_base_params
     best_model_base = BaseNet(batch_normalization=best_base_bn, dropout=best_base_dropout)
 
@@ -158,7 +172,7 @@ def train_tune_evaluate(lr, n):
         test_input.sub_(mu).div_(std)
         datasets.append((train_input, train_target, train_classes, test_input, test_target, test_classes))
 
-    # Find and report means and standard devs
+    # Find and report means and standard deviations for the 10 datasets of each model
     base_mean, base_std = performance_estimation(datasets, best_model_base, lr, False, n)
     print('Final BaseNet accuracy: {:.3f} +/- {:.3f}.'.format(base_mean, base_std))
     aux_mean, aux_std = performance_estimation(datasets, best_model_aux, lr, True, n)
@@ -169,6 +183,7 @@ def train_tune_evaluate(lr, n):
     print('Final BaseNetWeightShareAux accuracy: {:.3f} +/- {:.3f}.'.format(ws_aux_mean, ws_aux_std)) 
 
 def train_evaluate_best(model, train_input, train_target, train_classes, test_input, test_target, aux_loss, lr, n):
+    """ Trains and evaluates the best model. """
     if aux_loss:
         train_model_with_aux_loss(model, train_input, train_target, train_classes, mini_batch_size = 25, nb_epochs=30, lr=lr)
         nb_errors = compute_nb_errors_with_aux_loss(model, test_input, test_target, mini_batch_size = 25)    

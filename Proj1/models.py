@@ -2,7 +2,15 @@ import torch
 
 from torch import nn
 from torch.nn import functional as F
+# -------------------------------------------------------------------------------------
+  # Each model has two parameters
+  # use_bn ... whether the model uses batch normalisation
+  # dropout ... drop rate
+  # Batch normalisation layers are placed after each convolutional or linear layer (except the final classification layer)
+  # Dropout layers are placed after linear layer, except the final classification layer
+  # -------------------------------------------------------------------------------------
 
+# LeNet-like architecture, kernel sizes modified to suit the input size
 class BaseNet(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):
         super().__init__()
@@ -32,6 +40,7 @@ class BaseNet(nn.Module):
 # Model with auxiliary loss
 class BaseNetAux(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):
+        # Initially mirrors BaseNet but splits the input into two sub-inputs and processes each independently to get the two digit predictions
         super().__init__()
         self.conv1_1 = nn.Conv2d(1, 32, kernel_size = 3)
         self.conv1_2 = nn.Conv2d(1, 32, kernel_size = 3)
@@ -41,8 +50,7 @@ class BaseNetAux(nn.Module):
         self.fc1_2 = nn.Linear(256, 200)
         self.fc2_1 = nn.Linear(200, 10)
         self.fc2_2 = nn.Linear(200, 10)
-        # Part above mirrors BaseNet but splits input and processes each independently to get the two digit predictions
-        # Then combine the two, add one hidden layer and final layer to do the Boolean prediction
+        # Then combine the two outputs from the digit classification layers, add one hidden layer and a layer for the final the Boolean prediction
         self.fc3 = nn.Linear(20, 200)
         self.fc4 = nn.Linear(200, 2)
 
@@ -76,7 +84,7 @@ class BaseNetAux(nn.Module):
         if self.batch_normalization:
             y_1 = self.bn3_1(y_1)
             y_2 = self.bn3_2(y_2)
-
+        # Introduces auxiliary loss
         y_1_loss = self.fc2_1(self.dropout(F.relu(y_1)))
         y_2_loss = self.fc2_2(self.dropout(F.relu(y_2)))
         y_1 = y_1_loss
@@ -90,8 +98,8 @@ class BaseNetAux(nn.Module):
         y = self.fc4(self.dropout(F.relu(y)))
         return (y, y_1_loss, y_2_loss)
 
-# Model with weight sharing (siamese architecture)
-# Mirrors model with auxiliary loss but use the same weights for both sub-inputs
+# Model with weight sharing
+# Mirrors model with auxiliary loss (BaseNetAux) but uses the same weights for both sub-inputs
 class BaseNetWeightShare(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):
         super().__init__()
@@ -145,7 +153,7 @@ class BaseNetWeightShare(nn.Module):
         y = self.fc4(self.dropout(F.relu(y)))
         return y
 
-# Model with weight sharing (siamese architecture) and with auxiliary loss
+# Model with weight sharing and with auxiliary loss
 class BaseNetWeightShareAux(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):
         super().__init__()
@@ -187,7 +195,7 @@ class BaseNetWeightShareAux(nn.Module):
         if self.batch_normalization:
             y_1 = self.bn3_1(y_1)
             y_2 = self.bn3_2(y_2)
-
+        # Introduces auxiliary loss
         y_1_loss = self.fc2(self.dropout(F.relu(y_1)))
         y_2_loss = self.fc2(self.dropout(F.relu(y_2)))
         y_1 = y_1_loss

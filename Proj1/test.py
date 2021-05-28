@@ -1,5 +1,5 @@
 from dlc_practical_prologue import generate_pair_sets
-from helpers import *
+from train import *
 from models import *
 
 if __name__ == '__main__':
