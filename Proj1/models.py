@@ -1,7 +1,7 @@
 import torch
-
 from torch import nn
 from torch.nn import functional as F
+torch.manual_seed(1)
 
 class BaseNet(nn.Module):
     def __init__(self, batch_normalization = False, dropout = 0):

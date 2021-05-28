@@ -4,6 +4,7 @@ from torch import optim
 import copy
 from dlc_practical_prologue import generate_pair_sets
 from models import *
+torch.manual_seed(1)
 
 def train_model(model, train_input, train_target, mini_batch_size = 50, nb_epochs = 25, lr = 0.001):
     criterion = nn.CrossEntropyLoss()
